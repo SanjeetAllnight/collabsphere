@@ -3,6 +3,7 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getDatabase, ref, onDisconnect, set, serverTimestamp } from 'firebase/database';
+import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 // Firebase configuration from environment variables
 // Using client-side Firebase SDK (not admin SDK)
@@ -30,6 +31,10 @@ export const auth = getAuth(app);
 export const firestore = getFirestore(app);
 export const storage = getStorage(app);
 export const database = getDatabase(app);
+export const rtdb = getDatabase(app); // Realtime Database alias
+
+// Initialize messaging (only on client side)
+export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
 
 // Also export as 'db' for backward compatibility
 export const db = firestore;
@@ -40,7 +45,7 @@ if (typeof window !== 'undefined') {
   onAuthStateChanged(auth, (user) => {
     if (user) {
       // User is logged in - set online status
-      const userStatusRef = ref(database, `usersStatus/${user.uid}`);
+      const userStatusRef = ref(database, `presence/${user.uid}`);
       
       // Set user as online
       set(userStatusRef, {

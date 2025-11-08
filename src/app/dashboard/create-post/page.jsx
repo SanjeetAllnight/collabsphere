@@ -8,13 +8,15 @@ export default function CreatePostPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
+  const [tags, setTags] = useState('');
+  const [requiredSkills, setRequiredSkills] = useState('');
   const [user, setUser] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const router = useRouter();
 
-  const categories = ['Technical', 'Cultural', 'Sports', 'Others'];
+  const categories = ['WebDev', 'AI/ML', 'IoT', 'AppDev', 'Cybersec', 'Blockchain', 'Others'];
 
   useEffect(() => {
     // Listen to auth state changes
@@ -68,17 +70,27 @@ export default function CreatePostPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/posts', {
+      // Convert tags and requiredSkills to arrays
+      const tagsArray = tags.trim() 
+        ? tags.split(',').map((t) => t.trim()).filter((t) => t.length > 0)
+        : [];
+      const requiredSkillsArray = requiredSkills.trim() 
+        ? requiredSkills.split(',').map((s) => s.trim()).filter((s) => s.length > 0)
+        : [];
+
+      const response = await fetch('/api/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: user.uid,
-          email: user.email,
+          ownerId: user.uid,
+          ownerEmail: user.email,
           title: title.trim(),
           description: description.trim(),
           category,
+          tags: tagsArray,
+          requiredSkills: requiredSkillsArray,
         }),
       });
 
@@ -87,7 +99,7 @@ export default function CreatePostPage() {
       if (data.success) {
         router.push('/dashboard');
       } else {
-        setError(data.error || 'Failed to create post');
+        setError(data.error || 'Failed to create project');
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
@@ -120,7 +132,7 @@ export default function CreatePostPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="title" className="block text-base font-bold text-gray-800 mb-2">
               Title
             </label>
             <input
@@ -129,13 +141,13 @@ export default function CreatePostPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-              placeholder="Enter post title"
+              className="w-full border border-gray-300 rounded-lg p-2 text-gray-900 font-semibold focus:ring-purple-500 focus:ring-2 focus:border-transparent outline-none transition"
+              placeholder="Enter project title"
             />
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="description" className="block text-base font-bold text-gray-800 mb-2">
               Description
             </label>
             <textarea
@@ -144,21 +156,21 @@ export default function CreatePostPage() {
               onChange={(e) => setDescription(e.target.value)}
               required
               rows={6}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none"
-              placeholder="Enter post description"
+              className="w-full border border-gray-300 rounded-lg p-2 text-gray-900 font-semibold focus:ring-purple-500 focus:ring-2 focus:border-transparent outline-none transition resize-none"
+              placeholder="Enter project description"
             />
           </div>
 
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-              Category <span className="text-red-500">*</span>
+            <label htmlFor="category" className="block text-base font-bold text-gray-800 mb-2">
+              Category/Domain <span className="text-red-500">*</span>
             </label>
             <select
               id="category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition bg-white"
+              className="w-full border border-gray-300 rounded-lg p-2 text-gray-900 font-semibold focus:ring-purple-500 focus:ring-2 focus:border-transparent outline-none transition bg-white"
             >
               <option value="">Select a category</option>
               {categories.map((cat) => (
@@ -167,6 +179,36 @@ export default function CreatePostPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label htmlFor="tags" className="block text-base font-bold text-gray-800 mb-2">
+              Tags
+            </label>
+            <input
+              id="tags"
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-2 text-gray-900 font-semibold focus:ring-purple-500 focus:ring-2 focus:border-transparent outline-none transition"
+              placeholder="AI, Machine Learning, Python (comma-separated)"
+            />
+            <p className="mt-1 text-xs text-gray-500">Separate multiple tags with commas</p>
+          </div>
+
+          <div>
+            <label htmlFor="requiredSkills" className="block text-base font-bold text-gray-800 mb-2">
+              Required Skills
+            </label>
+            <input
+              id="requiredSkills"
+              type="text"
+              value={requiredSkills}
+              onChange={(e) => setRequiredSkills(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-2 text-gray-900 font-semibold focus:ring-purple-500 focus:ring-2 focus:border-transparent outline-none transition"
+              placeholder="React, Node.js, MongoDB (comma-separated)"
+            />
+            <p className="mt-1 text-xs text-gray-500">Separate multiple skills with commas</p>
           </div>
 
           {error && (
@@ -186,7 +228,7 @@ export default function CreatePostPage() {
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+              className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2 px-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>
@@ -194,7 +236,7 @@ export default function CreatePostPage() {
                   <span>Creating...</span>
                 </>
               ) : (
-                'Create Post'
+                'Create Project'
               )}
             </button>
           </div>

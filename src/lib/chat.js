@@ -4,10 +4,13 @@ import {
   addDoc, 
   onSnapshot,
   query,
-  orderBy
+  orderBy,
+  serverTimestamp,
+  getDoc
 } from 'firebase/firestore';
 import { firestore } from './firebase';
-import { addNotification } from './db';
+import { addNotification, getUserById } from './db';
+import { getChatId } from './directMessages';
 
 /**
  * Generate a consistent chat room ID from two user IDs
@@ -109,4 +112,56 @@ export const listenToMessages = (chatRoomId, callback) => {
     return () => {};
   }
 };
+
+/**
+ * Send a collaboration request
+ * Creates a notification for the receiver with a link to the chat
+ * @param {string} senderId - ID of the user sending the request
+ * @param {string} receiverId - ID of the user receiving the request
+ * @param {string} postId - ID of the post related to the collaboration
+ * @returns {Promise<{success: boolean, notificationId: string | null, error: string | null}>}
+ */
+export async function sendCollabRequest(senderId, receiverId, postId) {
+  try {
+    // Get sender's name
+    const { success, user: sender } = await getUserById(senderId);
+    const senderName = sender?.name || sender?.email || 'Someone';
+
+    // Fetch post data to get project title
+    let projectTitle = 'this project';
+    if (postId) {
+      try {
+        const postRef = doc(firestore, 'posts', postId);
+        const postSnap = await getDoc(postRef);
+        if (postSnap.exists()) {
+          const postData = postSnap.data();
+          projectTitle = postData.title || 'this project';
+        }
+      } catch (postError) {
+        console.error('Error fetching post:', postError);
+        // Continue with default title if post fetch fails
+      }
+    }
+
+    // Generate chat ID
+    const chatId = getChatId(senderId, receiverId);
+
+    // Create notification with updated format
+    const notificationsRef = collection(firestore, 'notifications');
+    const notificationData = {
+      userId: receiverId,
+      title: 'New Collaboration Invite',
+      message: `${senderName} wants to collaborate on '${projectTitle}'`,
+      link: `/chat/${chatId}`,
+      createdAt: serverTimestamp(),
+      read: false,
+    };
+
+    const docRef = await addDoc(notificationsRef, notificationData);
+
+    return { success: true, notificationId: docRef.id, error: null };
+  } catch (error) {
+    return { success: false, notificationId: null, error: error.message };
+  }
+}
 

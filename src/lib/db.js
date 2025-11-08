@@ -10,7 +10,8 @@ import {
   query, 
   orderBy,
   where,
-  onSnapshot
+  onSnapshot,
+  serverTimestamp
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from './firebase';
@@ -29,7 +30,8 @@ export const saveUserProfile = async (userId, email, name) => {
     await setDoc(userRef, {
       email,
       name,
-      createdAt: new Date().toISOString(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     }, { merge: true });
 
     return { success: true, error: null };
@@ -84,7 +86,7 @@ export const updateUserProfile = async (uid, data) => {
     const userRef = doc(firestore, 'users', uid);
     await updateDoc(userRef, {
       ...data,
-      updatedAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
     });
 
     return { success: true, error: null };

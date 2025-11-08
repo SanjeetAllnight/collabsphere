@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { firestore } from '@/lib/firebase';
+import { collection, doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 /**
  * GET /api/users
@@ -18,7 +18,7 @@ export async function GET(request) {
       );
     }
 
-    const userRef = doc(db, 'users', userId);
+    const userRef = doc(firestore, 'users', userId);
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
@@ -55,10 +55,10 @@ export async function POST(request) {
       );
     }
 
-    const userRef = doc(db, 'users', userId);
+    const userRef = doc(firestore, 'users', userId);
     await setDoc(userRef, {
       ...userData,
-      updatedAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
     }, { merge: true });
 
     return NextResponse.json({
@@ -88,10 +88,10 @@ export async function PUT(request) {
       );
     }
 
-    const userRef = doc(db, 'users', userId);
+    const userRef = doc(firestore, 'users', userId);
     await updateDoc(userRef, {
       ...userData,
-      updatedAt: new Date().toISOString(),
+      updatedAt: serverTimestamp(),
     });
 
     return NextResponse.json({

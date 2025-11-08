@@ -25,3 +25,37 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Global Brand Classes */
+.glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6A00F4, #A955F7);
+  color: white;
+  transition: all 0.25s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #5A00E4, #9D45E7);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(106, 0, 244, 0.3);
+}
+
+.hover-up {
+  transition: transform 0.25s ease;
+}
+
+.hover-up:hover {
+  transform: translateY(-3px);
+}
+
+.badge {
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
