@@ -19,6 +19,42 @@ export async function POST(request) {
     }
 
     const projectsRef = collection(firestore, 'projects');
+
+    // Auto-seed if empty
+    const existing = await getDocs(projectsRef);
+    if (existing.empty) {
+      const samples = [
+        {
+          ownerId: 'seed-user',
+          ownerEmail: 'seed@example.com',
+          title: 'AI Study Buddy',
+          description: 'AI chatbot to help students study with spaced repetition.',
+          category: 'AI/ML',
+          tags: ['ai', 'chatbot', 'education'],
+          requiredSkills: ['Python', 'React', 'Firebase'],
+          contributors: [],
+          upvotes: 0,
+          upvoters: [],
+          commentsCount: 0,
+        },
+        {
+          ownerId: 'seed-user',
+          ownerEmail: 'seed@example.com',
+          title: 'Campus Connect App',
+          description: 'A mobile app to connect clubs and events on campus.',
+          category: 'AppDev',
+          tags: ['react-native', 'mobile'],
+          requiredSkills: ['React Native', 'Figma'],
+          contributors: [],
+          upvotes: 0,
+          upvoters: [],
+          commentsCount: 0,
+        },
+      ];
+      for (const p of samples) {
+        await addDoc(projectsRef, { ...p, createdAt: serverTimestamp() });
+      }
+    }
     const projectData = {
       ownerId,
       ownerEmail: ownerEmail || '',

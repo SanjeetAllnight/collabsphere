@@ -69,20 +69,12 @@ export default function ExplorePage() {
   // Fetch user profile
   useEffect(() => {
     const unsubscribe = onAuthChange((currentUser) => {
-      if (!currentUser) {
-        router.push('/login');
-        return;
-      }
-      setUser(currentUser);
+      setUser(currentUser || null);
       setLoading(false);
     });
 
     const currentUser = getCurrentUser();
-    if (!currentUser) {
-      router.push('/login');
-      return;
-    }
-    setUser(currentUser);
+    setUser(currentUser || null);
     setLoading(false);
 
     return () => unsubscribe();

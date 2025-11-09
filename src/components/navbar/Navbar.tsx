@@ -52,6 +52,19 @@ export default function Navbar() {
           {/* Navigation Links */}
           <div className="flex items-center gap-4">
             <Link
+              href="/events"
+              className={`px-3 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${
+                pathname === '/events'
+                  ? 'bg-indigo-100 text-indigo-700'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h18M3 12h18M3 19h18" />
+              </svg>
+              <span className="hidden sm:inline">Explore</span>
+            </Link>
+            <Link
               href="/messages"
               className={`px-3 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${
                 pathname === '/messages'

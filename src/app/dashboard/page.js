@@ -129,13 +129,14 @@ export default function DashboardPage() {
     fetchEvents();
   }, []);
 
-  // Real-time activities listener
+  // Real-time activities listener (user-specific)
   useEffect(() => {
     if (!user) return;
 
     const activitiesRef = collection(firestore, 'activities');
     const q = query(
       activitiesRef,
+      where('userId', '==', user.uid),
       orderBy('createdAt', 'desc'),
       limit(20)
     );
@@ -436,7 +437,7 @@ export default function DashboardPage() {
               className="bg-white/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 p-6"
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-extrabold text-gray-900">All Projects</h2>
+                <h2 className="text-2xl font-extrabold text-gray-900">Discover Projects</h2>
               </div>
 
               {/* Category Filter */}

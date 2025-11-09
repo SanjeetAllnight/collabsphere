@@ -196,6 +196,19 @@ export async function GET(request) {
     const availabilityParam = searchParams.get('availability');
 
     const eventsRef = collection(firestore, 'events');
+
+    // Auto-seed if empty
+    const existing = await getDocs(eventsRef);
+    if (existing.empty) {
+      const seedPromises = seedEvents.map(event => addDoc(eventsRef, {
+        ...event,
+        startDate: Timestamp.fromDate(event.startDate),
+        endDate: Timestamp.fromDate(event.endDate),
+        createdAt: serverTimestamp(),
+      }));
+      await Promise.all(seedPromises);
+    }
+
     let q = query(eventsRef, orderBy('startDate', 'asc'));
 
     // Apply filters

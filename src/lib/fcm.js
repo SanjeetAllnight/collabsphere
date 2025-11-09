@@ -1,9 +1,8 @@
 import { messaging } from './firebase';
 import { getToken, onMessage } from 'firebase/messaging';
 
-// VAPID key - This should be generated from Firebase Console
-// For now, using a placeholder. In production, get this from Firebase Console > Project Settings > Cloud Messaging
-const VAPID_KEY = 'YOUR_VAPID_KEY_HERE'; // Replace with your actual VAPID key
+// VAPID key - pulled from env; if missing or placeholder, we disable FCM token requests
+const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || 'YOUR_VAPID_KEY_HERE';
 
 /**
  * Request notification permission and get FCM token
@@ -16,6 +15,12 @@ export const requestNotificationPermission = async () => {
   }
 
   try {
+    // Skip when VAPID key is not configured
+    if (!VAPID_KEY || VAPID_KEY === 'YOUR_VAPID_KEY_HERE') {
+      console.warn('Skipping FCM token request: VAPID key not configured');
+      return null;
+    }
+
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
       // Register service worker if not already registered
@@ -34,7 +39,13 @@ export const requestNotificationPermission = async () => {
         tokenOptions.serviceWorkerRegistration = registration;
       }
 
-      const token = await getToken(messaging, tokenOptions);
+      let token = null;
+      try {
+        token = await getToken(messaging, tokenOptions);
+      } catch (tokenError) {
+        console.warn('Unable to get FCM token:', tokenError?.message || tokenError);
+        return null;
+      }
       console.log('FCM Token:', token);
       return token;
     } else {
