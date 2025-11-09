@@ -147,11 +147,10 @@ export const listenToDirectMessages = (chatId, currentUserId, callback) => {
 export const listenToUserChats = (userId, callback) => {
   try {
     const chatsRef = collection(firestore, 'chats');
+    // Fetch without orderBy to avoid composite index requirement, sort client-side
     const q = query(
       chatsRef,
-      where('participants', 'array-contains', userId),
-      orderBy('lastMessageTime', 'desc'),
-      limit(50)
+      where('participants', 'array-contains', userId)
     );
 
     const unsubscribe = onSnapshot(
@@ -179,18 +178,34 @@ export const listenToUserChats = (userId, callback) => {
             }
           }
 
+          // Parse lastMessageTime for sorting
+          const lastMessageTime = chatData.lastMessageTime?.toDate 
+            ? chatData.lastMessageTime.toDate() 
+            : (chatData.lastMessageTime ? new Date(chatData.lastMessageTime) : null);
+          const lastMessageTimestamp = lastMessageTime ? lastMessageTime.getTime() : 0;
+
           chats.push({
             id: chatId,
             otherUserId,
             otherUserProfile,
             lastMessage: chatData.lastMessage || '',
-            lastMessageTime: chatData.lastMessageTime || null,
+            lastMessageTime: lastMessageTime ? lastMessageTime.toISOString() : null,
             lastMessageSenderId: chatData.lastMessageSenderId || null,
             unreadCount,
+            _lastMessageTimestamp: lastMessageTimestamp, // For sorting
           });
         }
 
-        callback({ success: true, chats, error: null });
+        // Sort by lastMessageTime descending (newest first) - client-side
+        chats.sort((a, b) => (b._lastMessageTimestamp || 0) - (a._lastMessageTimestamp || 0));
+
+        // Apply limit after sorting
+        const limitedChats = chats.slice(0, 50);
+
+        // Remove temporary sorting field
+        const cleanedChats = limitedChats.map(({ _lastMessageTimestamp, ...chat }) => chat);
+
+        callback({ success: true, chats: cleanedChats, error: null });
       },
       (error) => {
         console.error('Error listening to chats:', error);

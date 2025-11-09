@@ -18,28 +18,37 @@ export async function GET(request) {
       );
     }
 
-    // Query notifications for the specific user, ordered by createdAt desc
+    // Query notifications for the specific user (fetch without orderBy to avoid composite index)
     const notificationsRef = collection(firestore, 'notifications');
     const q = query(
       notificationsRef,
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', userId)
     );
 
     const querySnapshot = await getDocs(q);
 
     const notifications = [];
     querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || new Date());
       notifications.push({
         id: doc.id,
-        ...doc.data(),
+        ...data,
+        createdAt: createdAt.toISOString(),
+        _createdAtTimestamp: createdAt.getTime(), // For sorting
       });
     });
 
+    // Sort by createdAt descending (newest first) - client-side
+    notifications.sort((a, b) => (b._createdAtTimestamp || 0) - (a._createdAtTimestamp || 0));
+
+    // Remove temporary sorting field
+    const cleanedNotifications = notifications.map(({ _createdAtTimestamp, ...notification }) => notification);
+
     return NextResponse.json({
       success: true,
-      notifications,
-      count: notifications.length,
+      notifications: cleanedNotifications,
+      count: cleanedNotifications.length,
     });
   } catch (error) {
     return NextResponse.json(

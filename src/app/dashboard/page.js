@@ -10,6 +10,8 @@ import { getChatRoomId } from '@/lib/chat';
 import { firestore } from '@/lib/firebase';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { getRecommendedProjects } from '@/lib/recommend';
+import Logo from '@/components/Logo';
+import { getDefaultProjectImage } from '@/lib/defaultProjectImages';
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -80,11 +82,16 @@ export default function DashboardPage() {
       const data = await response.json();
 
       if (data.success && data.projects) {
-        setProjects(data.projects);
+        // Ensure all projects have a category
+        const projectsWithCategory = data.projects.map(project => ({
+          ...project,
+          category: project.category || 'Others'
+        }));
+        setProjects(projectsWithCategory);
         
         // Compute recommendations if user profile is loaded
         if (userProfile) {
-          const recommended = getRecommendedProjects(data.projects, userProfile, 5);
+          const recommended = getRecommendedProjects(projectsWithCategory, userProfile, 5);
           setRecommendedProjects(recommended);
         }
       } else {
@@ -242,6 +249,11 @@ export default function DashboardPage() {
   };
 
   const getActivityMessage = (activity) => {
+    // If activity has a message field, use it directly
+    if (activity.message) {
+      return activity.message;
+    }
+    // Otherwise, use the type-based fallback
     switch (activity.type) {
       case 'created_project':
         return 'created a project';
@@ -258,7 +270,13 @@ export default function DashboardPage() {
     }
   };
 
-  const filteredProjects = projects;
+  // Filter projects by category (using project.category field, not tags)
+  const filteredProjects = selectedCategory === 'All' 
+    ? projects 
+    : projects.filter(project => {
+        // Ensure we're using project.category, not project.tags
+        return project.category === selectedCategory;
+      });
 
   // Show loading state while checking authentication
   if (loading) {
@@ -278,11 +296,14 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100 p-6 mb-6">
+        <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-1">CollabSphere</h1>
-              <p className="text-gray-600">Welcome, <span className="font-semibold text-indigo-600">{userProfile?.name || user.email}</span></p>
+            <div className="flex items-center gap-4">
+              <Logo size="lg" />
+              <div>
+                <h1 className="text-4xl font-extrabold text-gray-900 mb-1">CollabSphere</h1>
+                <p className="text-gray-600">Welcome, <span className="font-semibold text-indigo-600">{userProfile?.name || user.email}</span></p>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Link
@@ -308,9 +329,9 @@ export default function DashboardPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100 p-6"
+              className="bg-white/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 p-6 mb-6"
             >
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Recent Activities</h2>
+              <h2 className="text-2xl font-extrabold text-gray-900 mb-5">Recent Activities</h2>
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {activities.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">No recent activities</p>
@@ -324,8 +345,14 @@ export default function DashboardPage() {
                       className="border-b border-gray-200 pb-3 last:border-0"
                     >
                       <p className="text-sm text-gray-700">
-                        <span className="font-semibold">{activity.userId === user.uid ? 'You' : 'Someone'}</span>{' '}
-                        {getActivityMessage(activity)}
+                        {activity.userId === user.uid ? (
+                          <span>{getActivityMessage(activity)}</span>
+                        ) : (
+                          <>
+                            <span className="font-semibold">Someone</span>{' '}
+                            {getActivityMessage(activity)}
+                          </>
+                        )}
                         <span className="text-gray-500 ml-2">{formatTimeAgo(activity.createdAt)}</span>
                       </p>
                     </motion.div>
@@ -340,10 +367,10 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100 p-6"
+                className="bg-white/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 p-6 mb-6"
               >
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-2xl font-bold text-gray-900">Recommended Projects</h2>
+                <div className="flex justify-between items-center mb-5">
+                  <h2 className="text-2xl font-extrabold text-gray-900">Recommended Projects</h2>
                   <Link
                     href="/explore"
                     className="text-indigo-600 hover:text-indigo-700 font-semibold text-sm"
@@ -351,35 +378,51 @@ export default function DashboardPage() {
                     See more →
                   </Link>
                 </div>
-                <div className="overflow-x-auto">
-                  <div className="flex gap-4 pb-4">
-                    {recommendedProjects.map((project, index) => (
+                <div className="overflow-x-auto pb-2">
+                  <div className="flex gap-5 pb-4">
+                    {recommendedProjects.map((project, index) => {
+                      const category = project.category || 'Others';
+                      const imageUrl = project.imageUrl || getDefaultProjectImage(category);
+                      return (
                       <motion.div
                         key={project.id}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.1 }}
-                        className="min-w-[300px] bg-white rounded-xl shadow-md border border-gray-200 p-4 hover:shadow-xl transition-all hover:scale-105"
+                        className="min-w-[320px] bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition-all hover:scale-[1.02] duration-200"
                       >
                         <Link href={`/project/${project.id}`}>
-                          <h3 className="font-bold text-gray-900 mb-2 line-clamp-1">{project.title}</h3>
-                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{project.description}</p>
-                          {project.tags && project.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-3">
-                              {project.tags.slice(0, 3).map((tag, i) => (
-                                <span key={i} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
-                                  {tag}
-                                </span>
-                              ))}
+                          <div className="h-40 bg-gray-200 overflow-hidden">
+                            <img 
+                              src={imageUrl} 
+                              alt={project.title}
+                              className="w-full h-full object-cover transition-transform duration-200 hover:scale-[1.02]"
+                              onError={(e) => {
+                                e.target.src = getDefaultProjectImage('Others');
+                              }}
+                            />
+                          </div>
+                          <div className="p-4">
+                            <h3 className="font-bold text-gray-900 mb-2 line-clamp-1">{project.title}</h3>
+                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{project.description}</p>
+                            {project.tags && project.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-3">
+                                {project.tags.slice(0, 3).map((tag, i) => (
+                                  <span key={i} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500">Score: {project.recommendationScore || 0}</span>
+                              <span className="text-xs text-indigo-600">▲ {project.upvotes || 0}</span>
                             </div>
-                          )}
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500">Score: {project.recommendationScore || 0}</span>
-                            <span className="text-xs text-indigo-600">▲ {project.upvotes || 0}</span>
                           </div>
                         </Link>
                       </motion.div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </motion.div>
@@ -390,10 +433,10 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100 p-6"
+              className="bg-white/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 p-6"
             >
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">All Projects</h2>
+                <h2 className="text-2xl font-extrabold text-gray-900">All Projects</h2>
               </div>
 
               {/* Category Filter */}
@@ -420,102 +463,134 @@ export default function DashboardPage() {
                   <p className="text-gray-600">Loading projects...</p>
                 </div>
               ) : filteredProjects.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-600 text-lg">
+                <div className="text-center py-16">
+                  <svg
+                    className="mx-auto h-48 w-48 text-gray-300 mb-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+                    />
+                  </svg>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
                     {selectedCategory === 'All' 
                       ? 'No projects yet' 
                       : `No projects in ${selectedCategory} category`}
-                  </p>
+                  </h3>
+                  <p className="text-gray-500 mb-6">Get started by creating your first project!</p>
                   <Link
                     href="/dashboard/create-post"
-                    className="inline-block mt-4 text-indigo-600 hover:text-indigo-700 font-semibold"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all hover:scale-105 shadow-md"
                   >
-                    Create the first project
+                    <span>Start a New Project</span>
+                    <span>🚀</span>
                   </Link>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {filteredProjects.map((project) => {
                     const hasUpvoted = project.upvoters?.includes(user.uid) || false;
+                    const category = project.category || 'Others';
+                    const imageUrl = project.imageUrl || getDefaultProjectImage(category);
                     return (
                       <motion.div
                         key={project.id}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-white rounded-xl shadow-md border border-gray-200 p-5 hover:shadow-xl transition-all hover:scale-[1.02]"
+                        className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition-all hover:scale-[1.02] duration-200"
                       >
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex-1">
-                            <Link href={`/project/${project.id}`}>
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="text-xl font-bold text-gray-900">{project.title}</h3>
-                                {project.category && (
-                                  <span className="px-2 py-1 text-xs font-semibold bg-indigo-100 text-indigo-700 rounded-full">
-                                    {project.category}
-                                  </span>
-                                )}
+                        <div className="flex gap-4">
+                          <div className="w-48 h-32 flex-shrink-0 bg-gray-200 overflow-hidden">
+                            <img 
+                              src={imageUrl} 
+                              alt={project.title}
+                              className="w-full h-full object-cover transition-transform duration-200 hover:scale-[1.02]"
+                              onError={(e) => {
+                                e.target.src = getDefaultProjectImage('Others');
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 p-5">
+                            <div className="flex justify-between items-start mb-3">
+                              <div className="flex-1">
+                                <Link href={`/project/${project.id}`}>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h3 className="text-xl font-bold text-gray-900">{project.title}</h3>
+                                    {project.category && (
+                                      <span className="px-2 py-1 text-xs font-semibold bg-indigo-100 text-indigo-700 rounded-full">
+                                        {project.category}
+                                      </span>
+                                    )}
+                                  </div>
+                                </Link>
                               </div>
-                            </Link>
-                          </div>
-                          <span className="text-sm text-gray-500 ml-4">
-                            {new Date(project.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <Link href={`/project/${project.id}`}>
-                          <p className="text-gray-700 mb-3 line-clamp-2">{project.description}</p>
-                        </Link>
-                        {project.tags && project.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {project.tags.slice(0, 5).map((tag, index) => (
-                              <span
-                                key={index}
-                                className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium"
-                              >
-                                {tag}
+                              <span className="text-sm text-gray-500 ml-4">
+                                {new Date(project.createdAt).toLocaleDateString()}
                               </span>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-4">
-                            <button
-                              onClick={() => handleUpvote(project.id)}
-                              disabled={upvoting === project.id || !user}
-                              className={`flex items-center gap-1 px-3 py-1 rounded-lg font-semibold transition-all hover:scale-105 ${
-                                hasUpvoted
-                                  ? 'bg-red-500 text-white'
-                                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                              }`}
-                            >
-                              ▲ {project.upvotes || 0}
-                            </button>
-                            <Link
-                              href={`/project/${project.id}`}
-                              className="flex items-center gap-1 text-gray-600 hover:text-indigo-600"
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                              </svg>
-                              {project.commentsCount || 0}
-                            </Link>
-                          </div>
-                          {project.ownerId && project.ownerId !== user.uid && (
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleCollaborate(project.ownerId, project.id)}
-                                disabled={collaborating === project.id}
-                                className="px-3 py-1 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-all hover:scale-105 disabled:opacity-50"
-                              >
-                                {collaborating === project.id ? '...' : 'Collaborate'}
-                              </button>
-                              <button
-                                onClick={() => handleMessage(project.ownerId)}
-                                className="px-3 py-1 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-all hover:scale-105"
-                              >
-                                Message
-                              </button>
                             </div>
-                          )}
+                            <Link href={`/project/${project.id}`}>
+                              <p className="text-gray-700 mb-3 line-clamp-2">{project.description}</p>
+                            </Link>
+                            {project.tags && project.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                {project.tags.slice(0, 5).map((tag, index) => (
+                                  <span
+                                    key={index}
+                                    className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-4">
+                                <button
+                                  onClick={() => handleUpvote(project.id)}
+                                  disabled={upvoting === project.id || !user}
+                                  className={`flex items-center gap-1 px-3 py-1 rounded-lg font-semibold transition-all hover:scale-105 ${
+                                    hasUpvoted
+                                      ? 'bg-red-500 text-white'
+                                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                  }`}
+                                >
+                                  ▲ {project.upvotes || 0}
+                                </button>
+                                <Link
+                                  href={`/project/${project.id}`}
+                                  className="flex items-center gap-1 text-gray-600 hover:text-indigo-600"
+                                >
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                  </svg>
+                                  {project.commentsCount || 0}
+                                </Link>
+                              </div>
+                              {project.ownerId && project.ownerId !== user.uid && (
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleCollaborate(project.ownerId, project.id)}
+                                    disabled={collaborating === project.id}
+                                    className="px-3 py-1 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-all hover:scale-105 disabled:opacity-50"
+                                  >
+                                    {collaborating === project.id ? '...' : 'Collaborate'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleMessage(project.ownerId)}
+                                    className="px-3 py-1 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-all hover:scale-105"
+                                  >
+                                    Message
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </motion.div>
                     );
@@ -532,7 +607,7 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-100 p-6"
+              className="bg-white/70 backdrop-blur-md rounded-2xl shadow-md border border-gray-100 p-6"
             >
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-900">Upcoming Events</h2>

@@ -197,6 +197,142 @@ async function seedUsers() {
 }
 
 /**
+ * Seed Activities
+ */
+async function seedActivities(userIds) {
+  console.log('🌱 Seeding activities...');
+  
+  const activities = [
+    {
+      userId: userIds[0],
+      type: 'achievement',
+      message: 'You won Hackfest 2025 — 1st Place 🏆',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[1],
+      type: 'achievement',
+      message: 'You participated in SIH 2024 — Shortlisted ✅',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[2],
+      type: 'achievement',
+      message: 'You joined WebDev Bootcamp at XYZ College 💡',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[3],
+      type: 'collaboration',
+      message: 'You collaborated on Smart Parking System project 🤝',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[0],
+      type: 'created_project',
+      message: 'You created a new project: E-Learning Platform',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 3 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[4],
+      type: 'achievement',
+      message: 'You completed AWS Cloud Practitioner Certification 🎓',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 10 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[5],
+      type: 'collaboration',
+      message: 'You joined Mobile App Development Team 📱',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 4 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[6],
+      type: 'achievement',
+      message: 'You won IoT Innovation Challenge — Runner Up 🥈',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[7],
+      type: 'created_project',
+      message: 'You created a new project: Open Source Contribution Tracker',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 8 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[1],
+      type: 'achievement',
+      message: 'You published research paper on ML Algorithms 📄',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 12 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[2],
+      type: 'collaboration',
+      message: 'You contributed to Blockchain Voting System project ⛓️',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 9 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[3],
+      type: 'achievement',
+      message: 'You won UI/UX Design Competition — Best Design 🎨',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 11 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[4],
+      type: 'created_project',
+      message: 'You created a new project: DevOps Automation Tool',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 13 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[5],
+      type: 'achievement',
+      message: 'You completed Flutter Development Course 💻',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[6],
+      type: 'collaboration',
+      message: 'You joined Smart Home Automation Project 🏠',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[7],
+      type: 'achievement',
+      message: 'You won CodeChef Monthly Challenge — Top 10 🏅',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 16 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[0],
+      type: 'collaboration',
+      message: 'You collaborated on AI Chatbot Project 🤖',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 17 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[1],
+      type: 'created_project',
+      message: 'You created a new project: Medical Diagnosis AI System',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 18 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[2],
+      type: 'achievement',
+      message: 'You completed Full Stack Development Bootcamp 🚀',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 19 * 24 * 60 * 60 * 1000)),
+    },
+    {
+      userId: userIds[3],
+      type: 'collaboration',
+      message: 'You joined Design System Library Project 🎭',
+      createdAt: Timestamp.fromDate(new Date(Date.now() - 20 * 24 * 60 * 60 * 1000)),
+    },
+  ];
+
+  for (const activity of activities) {
+    await addDoc(collection(db, 'activities'), activity);
+  }
+
+  console.log(`✅ Seeded ${activities.length} activities\n`);
+}
+
+/**
  * Seed Projects
  */
 async function seedProjects(userIds) {
@@ -218,8 +354,8 @@ async function seedProjects(userIds) {
     {
       title: 'College Fest Management System',
       description: 'A comprehensive platform for managing college festivals with features like event registration, participant management, schedule coordination, payment integration, and real-time notifications. Includes admin dashboard and mobile app for attendees.',
-      category: 'Web Development',
-      tags: ['Web Development', 'Event Management', 'Full Stack'],
+      category: 'WebDev',
+      tags: ['WebDev', 'Event Management', 'Full Stack'],
       requiredSkills: ['React', 'Node.js', 'MongoDB', 'Payment Gateway', 'Real-time Updates'],
       ownerId: userIds[0], // Aarav Patel
       ownerEmail: 'aarav.patel@student.nitgoa.ac.in',
@@ -230,8 +366,8 @@ async function seedProjects(userIds) {
     {
       title: 'Crowdsourced Local Data Map',
       description: 'A community-driven mapping platform where users can add and verify local information like restaurants, shops, services, and events. Features include real-time updates, user ratings, photo uploads, and route planning integration.',
-      category: 'Web Development',
-      tags: ['Web Development', 'Maps', 'Community', 'Crowdsourcing'],
+      category: 'WebDev',
+      tags: ['WebDev', 'Maps', 'Community', 'Crowdsourcing'],
       requiredSkills: ['React', 'Node.js', 'PostgreSQL', 'Map APIs', 'Geolocation'],
       ownerId: userIds[2], // Rohan Desai
       ownerEmail: 'rohan.desai@student.nitgoa.ac.in',
@@ -254,8 +390,8 @@ async function seedProjects(userIds) {
     {
       title: 'Mental Wellness Companion App',
       description: 'A supportive mental health app featuring mood tracking, guided meditation, journaling, crisis resources, and anonymous peer support. Designed with privacy-first approach and beautiful, calming UI to encourage daily use.',
-      category: 'Mobile App',
-      tags: ['Mobile App', 'Health', 'UI/UX', 'Wellness'],
+      category: 'AppDev',
+      tags: ['AppDev', 'Health', 'UI/UX', 'Wellness'],
       requiredSkills: ['Flutter', 'UI/UX Design', 'Firebase', 'Psychology Research'],
       ownerId: userIds[3], // Sara Mathews
       ownerEmail: 'sara.mathews@student.nitgoa.ac.in',
@@ -266,12 +402,180 @@ async function seedProjects(userIds) {
     {
       title: 'Code Collaboration Platform for Students',
       description: 'A GitHub-like platform specifically designed for students to collaborate on coding projects. Features include real-time code editing, project templates, peer review system, and integration with popular development tools.',
-      category: 'Web Development',
-      tags: ['Web Development', 'Collaboration', 'Education', 'Developer Tools'],
+      category: 'WebDev',
+      tags: ['WebDev', 'Collaboration', 'Education', 'Developer Tools'],
       requiredSkills: ['React', 'WebSockets', 'Docker', 'Git Integration', 'Real-time Collaboration'],
       ownerId: userIds[7], // Ananya Krishnan
       ownerEmail: 'ananya.krishnan@student.nitgoa.ac.in',
       upvotes: 20,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Blockchain-based Voting System',
+      description: 'A secure and transparent voting system built on blockchain technology. Ensures vote integrity, prevents tampering, and provides real-time results. Features include voter authentication, anonymous voting, and audit trails.',
+      category: 'Blockchain',
+      tags: ['Blockchain', 'Security', 'Voting', 'Ethereum'],
+      requiredSkills: ['Solidity', 'Web3.js', 'React', 'Smart Contracts', 'Blockchain'],
+      ownerId: userIds[2],
+      ownerEmail: 'rohan.desai@student.nitgoa.ac.in',
+      upvotes: 19,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Cybersecurity Threat Detection System',
+      description: 'An AI-powered cybersecurity system that detects and prevents threats in real-time. Uses machine learning to identify suspicious patterns, malware, and intrusion attempts. Features include automated response and detailed threat reports.',
+      category: 'Cybersec',
+      tags: ['Cybersec', 'AI/ML', 'Security', 'Network'],
+      requiredSkills: ['Python', 'Machine Learning', 'Network Security', 'Cybersecurity', 'Linux'],
+      ownerId: userIds[4],
+      ownerEmail: 'jay.mehta@student.nitgoa.ac.in',
+      upvotes: 16,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'E-Commerce Platform with AI Recommendations',
+      description: 'A full-featured e-commerce platform with AI-powered product recommendations, personalized shopping experience, and advanced search. Includes admin dashboard, payment integration, and order management.',
+      category: 'WebDev',
+      tags: ['WebDev', 'E-Commerce', 'AI/ML', 'Full Stack'],
+      requiredSkills: ['React', 'Node.js', 'MongoDB', 'AI/ML', 'Payment Gateway'],
+      ownerId: userIds[0],
+      ownerEmail: 'aarav.patel@student.nitgoa.ac.in',
+      upvotes: 14,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Smart Home Automation with Voice Control',
+      description: 'An IoT-based smart home system that allows users to control lights, appliances, and security systems via voice commands and mobile app. Features include scheduling, energy monitoring, and integration with popular smart devices.',
+      category: 'IoT',
+      tags: ['IoT', 'Smart Home', 'Voice Control', 'Automation'],
+      requiredSkills: ['Arduino', 'Raspberry Pi', 'Flutter', 'Voice Recognition', 'IoT'],
+      ownerId: userIds[6],
+      ownerEmail: 'vikram.singh@student.nitgoa.ac.in',
+      upvotes: 21,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Fitness Tracking Mobile App',
+      description: 'A comprehensive fitness app with workout tracking, nutrition logging, progress analytics, and social features. Includes personalized workout plans, calorie counter, and integration with wearable devices.',
+      category: 'AppDev',
+      tags: ['AppDev', 'Health', 'Fitness', 'Mobile'],
+      requiredSkills: ['Flutter', 'Firebase', 'Health APIs', 'UI/UX Design'],
+      ownerId: userIds[5],
+      ownerEmail: 'priya.reddy@student.nitgoa.ac.in',
+      upvotes: 17,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Machine Learning Model Deployment Platform',
+      description: 'A platform for deploying, managing, and monitoring machine learning models in production. Features include model versioning, A/B testing, performance monitoring, and automated scaling.',
+      category: 'AI/ML',
+      tags: ['AI/ML', 'DevOps', 'MLOps', 'Cloud'],
+      requiredSkills: ['Python', 'Docker', 'Kubernetes', 'ML', 'Cloud Computing'],
+      ownerId: userIds[1],
+      ownerEmail: 'ishita.sharma@student.nitgoa.ac.in',
+      upvotes: 13,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Cryptocurrency Portfolio Tracker',
+      description: 'A web application for tracking cryptocurrency portfolios with real-time price updates, profit/loss calculations, and detailed analytics. Features include multiple exchange integration and price alerts.',
+      category: 'Blockchain',
+      tags: ['Blockchain', 'Crypto', 'Finance', 'WebDev'],
+      requiredSkills: ['React', 'Node.js', 'Crypto APIs', 'Web3', 'Charts'],
+      ownerId: userIds[7],
+      ownerEmail: 'ananya.krishnan@student.nitgoa.ac.in',
+      upvotes: 11,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Penetration Testing Toolkit',
+      description: 'A comprehensive toolkit for security professionals to perform penetration testing and vulnerability assessments. Includes automated scanning, report generation, and compliance checking features.',
+      category: 'Cybersec',
+      tags: ['Cybersec', 'Security', 'Penetration Testing', 'Tools'],
+      requiredSkills: ['Python', 'Cybersecurity', 'Network Security', 'Ethical Hacking'],
+      ownerId: userIds[4],
+      ownerEmail: 'jay.mehta@student.nitgoa.ac.in',
+      upvotes: 9,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Social Media Analytics Dashboard',
+      description: 'A powerful analytics dashboard for social media managers to track engagement, analyze trends, and schedule posts. Supports multiple platforms and provides detailed insights and reports.',
+      category: 'WebDev',
+      tags: ['WebDev', 'Analytics', 'Social Media', 'Dashboard'],
+      requiredSkills: ['React', 'Node.js', 'Social Media APIs', 'Data Visualization'],
+      ownerId: userIds[0],
+      ownerEmail: 'aarav.patel@student.nitgoa.ac.in',
+      upvotes: 10,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Agricultural IoT Monitoring System',
+      description: 'An IoT solution for monitoring soil moisture, temperature, and crop health in real-time. Helps farmers optimize irrigation and detect issues early. Features include mobile alerts and data analytics.',
+      category: 'IoT',
+      tags: ['IoT', 'Agriculture', 'Sensors', 'Monitoring'],
+      requiredSkills: ['Arduino', 'Sensors', 'Flutter', 'Data Analytics', 'IoT'],
+      ownerId: userIds[6],
+      ownerEmail: 'vikram.singh@student.nitgoa.ac.in',
+      upvotes: 8,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Language Learning Mobile App',
+      description: 'An interactive language learning app with gamification, speech recognition, and personalized learning paths. Features include vocabulary building, grammar exercises, and progress tracking.',
+      category: 'AppDev',
+      tags: ['AppDev', 'Education', 'Language', 'Mobile'],
+      requiredSkills: ['Flutter', 'Speech Recognition', 'AI/ML', 'UI/UX'],
+      ownerId: userIds[5],
+      ownerEmail: 'priya.reddy@student.nitgoa.ac.in',
+      upvotes: 7,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Computer Vision-based Quality Control',
+      description: 'An AI system that uses computer vision to inspect products on production lines for defects. Automates quality control processes and reduces human error. Features include real-time detection and reporting.',
+      category: 'AI/ML',
+      tags: ['AI/ML', 'Computer Vision', 'Manufacturing', 'Automation'],
+      requiredSkills: ['Python', 'OpenCV', 'TensorFlow', 'Image Processing', 'ML'],
+      ownerId: userIds[1],
+      ownerEmail: 'ishita.sharma@student.nitgoa.ac.in',
+      upvotes: 6,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Decentralized File Storage System',
+      description: 'A blockchain-based file storage system that provides secure, decentralized storage. Files are encrypted and distributed across multiple nodes. Features include access control and file versioning.',
+      category: 'Blockchain',
+      tags: ['Blockchain', 'Storage', 'Decentralized', 'Security'],
+      requiredSkills: ['Solidity', 'IPFS', 'Web3', 'Blockchain', 'Cryptography'],
+      ownerId: userIds[2],
+      ownerEmail: 'rohan.desai@student.nitgoa.ac.in',
+      upvotes: 5,
+      upvoters: [],
+      commentsCount: 0,
+    },
+    {
+      title: 'Network Traffic Analyzer',
+      description: 'A cybersecurity tool for analyzing network traffic, detecting anomalies, and identifying potential threats. Features include packet capture, protocol analysis, and real-time monitoring dashboard.',
+      category: 'Cybersec',
+      tags: ['Cybersec', 'Network', 'Security', 'Analytics'],
+      requiredSkills: ['Python', 'Network Programming', 'Cybersecurity', 'Data Analysis'],
+      ownerId: userIds[4],
+      ownerEmail: 'jay.mehta@student.nitgoa.ac.in',
+      upvotes: 4,
       upvoters: [],
       commentsCount: 0,
     },
@@ -477,15 +781,19 @@ async function seed() {
     // Seed events
     await seedEvents();
     
+    // Seed activities (using user IDs)
+    await seedActivities(userIds);
+    
     // Seed comments (using project IDs and user IDs)
     await seedComments(projectIds, userIds);
     
     console.log('✅ Seed completed successfully!');
     console.log(`\n📊 Summary:`);
     console.log(`   - Users: 8`);
-    console.log(`   - Projects: 6`);
+    console.log(`   - Projects: 20`);
     console.log(`   - Events: 6`);
-    console.log(`   - Comments: ~18-30`);
+    console.log(`   - Activities: 20`);
+    console.log(`   - Comments: ~60-100`);
     console.log('\n🎉 Demo data is ready for judging!');
     
     process.exit(0);

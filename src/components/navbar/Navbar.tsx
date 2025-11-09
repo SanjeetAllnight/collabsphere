@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { getCurrentUser, logoutUser, onAuthChange } from '@/lib/auth';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import Logo from '@/components/Logo';
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
@@ -43,7 +44,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <Logo size="md" />
             <span className="text-2xl font-bold text-indigo-600">CollabSphere</span>
           </Link>
 

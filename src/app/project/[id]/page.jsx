@@ -74,23 +74,28 @@ export default function ProjectDetailPage() {
     if (!projectId) return;
 
     const commentsRef = collection(firestore, 'comments');
+    // Fetch without orderBy to avoid composite index requirement, sort client-side
     const q = query(
       commentsRef,
-      where('projectId', '==', projectId),
-      orderBy('createdAt', 'asc')
+      where('projectId', '==', projectId)
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const allComments = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
+        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || new Date());
         allComments.push({
           id: doc.id,
           ...data,
-          createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : (data.createdAt || new Date().toISOString()),
+          createdAt: createdAt.toISOString(),
+          _createdAtTimestamp: createdAt.getTime(), // For sorting
           replies: [],
         });
       });
+
+      // Sort all comments by createdAt (ascending) before building structure
+      allComments.sort((a, b) => (a._createdAtTimestamp || 0) - (b._createdAtTimestamp || 0));
 
       // Build threaded structure
       const commentsMap = new Map();
@@ -110,7 +115,19 @@ export default function ProjectDetailPage() {
         }
       });
 
-      setComments(rootComments);
+      // Sort replies within each comment
+      rootComments.forEach(comment => {
+        if (comment.replies && comment.replies.length > 0) {
+          comment.replies.sort((a, b) => (a._createdAtTimestamp || 0) - (b._createdAtTimestamp || 0));
+          // Remove temporary sorting field
+          comment.replies = comment.replies.map(({ _createdAtTimestamp, ...reply }) => reply);
+        }
+      });
+
+      // Remove temporary sorting field from root comments
+      const cleanedComments = rootComments.map(({ _createdAtTimestamp, ...comment }) => comment);
+
+      setComments(cleanedComments);
     }, (error) => {
       console.error('Error fetching comments:', error);
     });

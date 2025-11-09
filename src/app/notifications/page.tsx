@@ -69,12 +69,11 @@ export default function NotificationsPage() {
 
     setLoading(true);
 
-    // Query notifications for the logged-in user, ordered by createdAt desc
+    // Query notifications for the logged-in user (fetch without orderBy to avoid composite index)
     const notificationsRef = collection(firestore, 'notifications');
     const q = query(
       notificationsRef,
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', user.uid)
     );
 
     // Set up real-time listener
@@ -83,12 +82,23 @@ export default function NotificationsPage() {
       (querySnapshot) => {
         const notificationsList: any[] = [];
         querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || new Date());
           notificationsList.push({
             id: doc.id,
-            ...doc.data(),
+            ...data,
+            createdAt: createdAt.toISOString(),
+            _createdAtTimestamp: createdAt.getTime(), // For sorting
           });
         });
-        setNotifications(notificationsList);
+
+        // Sort by createdAt descending (newest first) - client-side
+        notificationsList.sort((a, b) => (b._createdAtTimestamp || 0) - (a._createdAtTimestamp || 0));
+
+        // Remove temporary sorting field
+        const cleanedNotifications = notificationsList.map(({ _createdAtTimestamp, ...notification }) => notification);
+
+        setNotifications(cleanedNotifications);
         setLoading(false);
       },
       (error) => {

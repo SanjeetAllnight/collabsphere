@@ -102,10 +102,10 @@ export async function GET(request) {
     }
 
     const commentsRef = collection(firestore, 'comments');
+    // Fetch without orderBy to avoid composite index requirement, sort client-side
     const q = query(
       commentsRef,
-      where('projectId', '==', projectId),
-      orderBy('createdAt', 'asc')
+      where('projectId', '==', projectId)
     );
 
     const querySnapshot = await getDocs(q);
@@ -115,10 +115,12 @@ export async function GET(request) {
     // First pass: collect all comments
     querySnapshot.forEach((doc) => {
       const data = doc.data();
+      const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || new Date());
       const comment = {
         id: doc.id,
         ...data,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : (data.createdAt || new Date().toISOString()),
+        createdAt: createdAt.toISOString(),
+        _createdAtTimestamp: createdAt.getTime(), // For sorting
         replies: [],
       };
       commentsMap.set(doc.id, comment);
@@ -142,10 +144,25 @@ export async function GET(request) {
       }
     });
 
+    // Sort root comments by createdAt (ascending)
+    rootComments.sort((a, b) => (a._createdAtTimestamp || 0) - (b._createdAtTimestamp || 0));
+    
+    // Sort replies within each comment
+    rootComments.forEach(comment => {
+      if (comment.replies && comment.replies.length > 0) {
+        comment.replies.sort((a, b) => (a._createdAtTimestamp || 0) - (b._createdAtTimestamp || 0));
+        // Remove temporary sorting field from replies
+        comment.replies = comment.replies.map(({ _createdAtTimestamp, ...reply }) => reply);
+      }
+    });
+
+    // Remove temporary sorting field from root comments
+    const cleanedComments = rootComments.map(({ _createdAtTimestamp, ...comment }) => comment);
+
     return NextResponse.json({
       success: true,
-      comments: rootComments,
-      count: rootComments.length,
+      comments: cleanedComments,
+      count: cleanedComments.length,
     });
   } catch (error) {
     console.error('Error fetching comments:', error);

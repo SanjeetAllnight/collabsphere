@@ -8,7 +8,9 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "seed": "node ./src/scripts/seedData.js"
+    "seed": "node ./src/scripts/seedData.js",
+    "update-categories": "node ./src/scripts/updateProjectCategories.js",
+    "fix-categories": "node ./src/scripts/fixCategories.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

@@ -68,23 +68,33 @@ export async function GET(request) {
     const cursorParam = searchParams.get('cursor');
 
     const projectsRef = collection(firestore, 'projects');
-    let q = query(projectsRef, orderBy('createdAt', 'desc'));
+    let q;
+    let needsClientSideSort = false;
 
-    // Apply filters
-    if (categoryParam) {
-      q = query(q, where('category', '==', categoryParam));
-    }
-    if (ownerIdParam) {
-      q = query(q, where('ownerId', '==', ownerIdParam));
+    // Build query - avoid composite index by doing client-side sort when filtering
+    if (categoryParam && ownerIdParam) {
+      // Both filters - use category filter, then filter ownerId client-side
+      q = query(projectsRef, where('category', '==', categoryParam));
+      needsClientSideSort = true;
+    } else if (categoryParam) {
+      // Only category filter - fetch without orderBy to avoid composite index
+      q = query(projectsRef, where('category', '==', categoryParam));
+      needsClientSideSort = true;
+    } else if (ownerIdParam) {
+      // Only ownerId filter - can use orderBy (single field index exists by default)
+      q = query(projectsRef, where('ownerId', '==', ownerIdParam), orderBy('createdAt', 'desc'));
+    } else {
+      // No filters - can use orderBy
+      q = query(projectsRef, orderBy('createdAt', 'desc'));
     }
 
-    // Apply limit
-    if (limitParam > 0) {
+    // Apply limit (before client-side operations)
+    if (limitParam > 0 && !needsClientSideSort) {
       q = query(q, limit(limitParam));
     }
 
     const querySnapshot = await getDocs(q);
-    const projects = [];
+    let projects = [];
 
     querySnapshot.forEach((doc) => {
       const data = doc.data();
@@ -108,13 +118,34 @@ export async function GET(request) {
       }
 
       if (include) {
+        const createdAt = data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || new Date());
         projects.push({
           id: doc.id,
           ...data,
-          createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : (data.createdAt || new Date().toISOString()),
+          category: data.category || 'Others', // Ensure category always exists
+          createdAt: createdAt.toISOString(),
+          _createdAtTimestamp: createdAt.getTime(), // For client-side sorting
         });
       }
     });
+
+    // Apply additional client-side filters
+    if (ownerIdParam && categoryParam) {
+      projects = projects.filter(p => p.ownerId === ownerIdParam);
+    }
+
+    // Client-side sorting if needed (when category filter is applied)
+    if (needsClientSideSort) {
+      projects.sort((a, b) => (b._createdAtTimestamp || 0) - (a._createdAtTimestamp || 0));
+    }
+
+    // Apply limit after sorting if needed
+    if (limitParam > 0 && needsClientSideSort) {
+      projects = projects.slice(0, limitParam);
+    }
+
+    // Remove temporary sorting field
+    projects = projects.map(({ _createdAtTimestamp, ...project }) => project);
 
     return NextResponse.json({
       success: true,

@@ -10,6 +10,22 @@ const nextConfig = {
   reactCompiler: true,
   // Set output file tracing root to avoid lockfile warnings
   outputFileTracingRoot: __dirname,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'source.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'plus.unsplash.com',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
